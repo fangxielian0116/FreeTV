@@ -1,0 +1,55 @@
+name: Checks and resource builds
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  resources:
+    needs: checks
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        with:
+          path: .tools/HBuilderX-5.26
+          key: hbuilderx-linux-5.26.2026091802-v1
+      - run: bash scripts/ci/setup-hbuilderx.sh
+      - run: npm run prepare:native
+      - run: npm run build:h5
+      - run: npm run build:android
+      - run: npm run build:tv:h5
+      - run: npm run build:tv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phone-tv-resources
+          path: |
+            dist/build/
+            artifacts/phone/ui-*-build-receipt.json
+            artifacts/tv/ui-*-build-receipt.json
+          if-no-files-found: error
+          retention-days: 7

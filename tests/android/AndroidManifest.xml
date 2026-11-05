@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.fxl.freetv.test">
+    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="30" />
+    <application android:label="FreeTV playback checks" />
+    <instrumentation android:name="com.fxl.freetv.test.PlayerChecks" android:targetPackage="com.fxl.freetv.demo" android:functionalTest="true" />
+    <instrumentation android:name="com.fxl.freetv.test.TVChecks" android:targetPackage="com.fxl.freetv.demo" android:functionalTest="true" />
+</manifest>

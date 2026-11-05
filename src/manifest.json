@@ -1,0 +1,50 @@
+{
+    "name" : "FreeTV",
+    "appid" : "__UNI__E70B510",
+    "description" : "影视目录与 Android 原生播放器",
+    "versionName" : "0.2.1",
+    "versionCode" : "201",
+    "transformPx" : false,
+    "vueVersion" : "3",
+    "app-plus" : {
+        "usingComponents" : true,
+        "nvueStyleCompiler" : "uni-app",
+        "compilerVersion" : 3,
+        "screenOrientation" : [ "portrait-primary", "landscape-primary", "landscape-secondary" ],
+        "modules" : {},
+        "distribute" : {
+            "icons" : {
+                "android" : {
+                    "mdpi" : "static/brand/android-mdpi.png",
+                    "hdpi" : "static/brand/android-hdpi.png",
+                    "xhdpi" : "static/brand/android-xhdpi.png",
+                    "xxhdpi" : "static/brand/android-xxhdpi.png",
+                    "xxxhdpi" : "static/brand/android-xxxhdpi.png"
+                }
+            },
+            "android" : {
+                "packagename" : "com.fxl.freetv.demo",
+                "minSdkVersion" : 23,
+                "abiFilters" : [ "arm64-v8a", "armeabi-v7a", "x86" ],
+                "permissions" : [
+                    "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>"
+                ]
+            },
+            "ios" : {
+                "dSYMs" : false
+            }
+        }
+    },
+    "h5" : {
+        "title" : "FreeTV",
+        "router" : {
+            "mode" : "hash"
+        }
+    },
+    "uniStatistics" : {
+        "enable" : false
+    }
+}

@@ -1,0 +1,9 @@
+import { FreeTVPlayerBridge } from 'uts.sdk.modules.freetvPlayer'
+
+@UTSJS.keepAlive
+export function connectPlayer(callback: (message: string) => void) {
+  FreeTVPlayerBridge.connect((message: string) => { callback(message) })
+}
+export function playerCommand(command: string) { FreeTVPlayerBridge.command(command) }
+export function pendingProgress(): string { return FreeTVPlayerBridge.pendingProgress() }
+export function nativeVersion(): string { return '0.2.0' }

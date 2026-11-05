@@ -1,0 +1,11 @@
+<template><button v-if="TV_BUILD" class="tv-search-entry" data-tv-id="search-entry" @click="$emit('search')"><view class="tv-search-icon" aria-hidden="true"/><text class="tv-search-label">{{modelValue||'搜索影视 · 首字母 / 拼音'}}</text></button><view v-else class="search-bar"><input :value="modelValue" class="search-input" :placeholder="placeholder" confirm-type="search" @input="update" @confirm="$emit('search')"/><button class="search-button" @click="$emit('search')"><text>搜索</text></button></view></template>
+<script setup lang="ts">
+import { TV_BUILD } from '@/platform/target'
+withDefaults(defineProps<{modelValue:string;placeholder?:string}>(),{placeholder:'搜索电影、电视剧、综艺、动漫'})
+const emit=defineEmits<{'update:modelValue':[value:string];search:[]}>()
+function update(event:Event){emit('update:modelValue',(event as Event & {detail:{value:string}}).detail.value)}
+</script>
+<style scoped>
+.tv-search-entry{display:flex;align-items:center;min-width:0;width:100%;text-align:left;background:var(--ft-surface);border:1px solid var(--ft-border);padding:calc(8 * var(--tv-unit)) calc(14 * var(--tv-unit));color:var(--ft-muted)}.tv-search-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tv-search-icon{position:relative;flex-shrink:0;width:calc(13 * var(--tv-unit));height:calc(13 * var(--tv-unit));border:calc(2 * var(--tv-unit)) solid currentColor;border-radius:50%;margin-right:calc(12 * var(--tv-unit));box-sizing:border-box}.tv-search-icon:after{content:'';position:absolute;width:calc(7 * var(--tv-unit));height:calc(2 * var(--tv-unit));right:calc(-5 * var(--tv-unit));bottom:calc(-3 * var(--tv-unit));background:currentColor;transform:rotate(45deg);border-radius:calc(1 * var(--tv-unit))}
+.search-bar{display:flex;align-items:center;width:100%;height:52px;padding:4px;border:1px solid var(--ft-border);border-radius:12px;background:white;margin-bottom:18px}.search-input{flex:1;min-width:0;height:42px;padding:0 11px;font-size:14px;line-height:normal}.search-button{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:58px;height:42px;padding:0;background:var(--ft-accent);color:white;font-size:13px;line-height:1}.search-button text{display:block;line-height:20px;white-space:nowrap}
+</style>

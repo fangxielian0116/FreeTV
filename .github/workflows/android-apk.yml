@@ -1,0 +1,67 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: APK target
+        type: choice
+        options: [both, phone, tv]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    env:
+      BUILD_TARGET: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Validate required secrets
+        run: node scripts/ci/pack.mjs --validate
+        env:
+          DCLOUD_USERNAME: ${{ secrets.DCLOUD_USERNAME }}
+          DCLOUD_PASSWORD: ${{ secrets.DCLOUD_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - uses: actions/cache@v4
+        with:
+          path: .tools/HBuilderX-5.26
+          key: hbuilderx-linux-5.26.2026091802-v1
+      - run: bash scripts/ci/setup-hbuilderx.sh
+      - run: npm run prepare:native
+      - name: Build signed APK
+        run: node scripts/ci/pack.mjs
+        env:
+          DCLOUD_USERNAME: ${{ secrets.DCLOUD_USERNAME }}
+          DCLOUD_PASSWORD: ${{ secrets.DCLOUD_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FreeTV-${{ inputs.target }}-${{ github.run_number }}
+          path: |
+            artifacts/phone/*.apk
+            artifacts/phone/*receipt.json
+            artifacts/tv/*.apk
+            artifacts/tv/*receipt.json
+          if-no-files-found: error
+          retention-days: 14

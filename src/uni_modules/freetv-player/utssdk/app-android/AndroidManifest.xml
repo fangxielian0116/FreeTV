@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application android:usesCleartextTraffic="true">
+    <activity android:name="uts.sdk.modules.freetvPlayer.FreeTVPlayerActivity" android:screenOrientation="sensorLandscape" android:hardwareAccelerated="true" android:exported="false" android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize" android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen" />
+  </application>
+</manifest>

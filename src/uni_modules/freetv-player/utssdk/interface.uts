@@ -1,0 +1,4 @@
+export type ConnectPlayer = (callback: (message: string) => void) => void
+export type PlayerCommand = (command: string) => void
+export type PendingProgress = () => string
+export type NativeVersion = () => string

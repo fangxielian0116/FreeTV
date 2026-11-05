@@ -1,0 +1,49 @@
+<template><view class="player-page"><TVNavigation v-if="TV_BUILD" :active="tvActive"/><text class="player-symbol">▶</text><text>{{queue?.detail.title||'播放'}}</text><text class="hint">{{queue?.episode.label}}</text><text class="status">{{error||status}}</text><view v-if="error" class="actions"><button class="primary" @click="start">重试</button><button class="secondary" @click="back">返回选集</button></view></view></template>
+<script setup lang="ts">
+import TVNavigation from '@/components/TVNavigation.vue'
+import {TV_BUILD} from '@/platform/target'
+import {useTVPage} from '@/platform/tv-page'
+const tvActive=useTVPage()
+import {setTitlePlayback} from '@/services/title-index'
+
+import {ref} from 'vue';import {onReady,onUnload,onLoad} from '@dcloudio/uni-app';import type {PlaybackEvent} from '@/domain/playback';import {playbackReward,StallTracker} from '@/domain/playback';import {playQueue,type PlayQueue} from '@/services/play-queue';import {player,type PlayRequest} from '@/platform/player';import {playRequest} from '@/services/player-request';import {library,catalogCache} from '@/services/library';import {sourceState,sourceById,selectSource,observe,candidates,coolSource} from '@/services/source-store';import {adapter,loadDetail} from '@/services/catalog';import {RecoveryCoordinator,type RecoveryPlan} from '@/services/recovery';import {mappings} from '@/services/mappings';import {writeLocal} from '@/services/storage';import {directRoutes} from '@/domain/catalog'
+import {RECOVERY_VERIFY_MS,RECOVERY_COMMIT_MS} from '@/domain/recovery-policy'
+import {adjacentEpisode,EpisodeCompletion} from '@/domain/episode-navigation'
+const completion=new EpisodeCompletion()
+const queue=ref(playQueue.get()),error=ref(''),status=ref('正在准备视频…');let request:PlayRequest|undefined,disposed=false,generation=0,lastWrite=0,lastRecovery=0,lastEvent:PlaybackEvent|undefined,waitingAt=0,off:()=>void=()=>{},prepared:RecoveryPlan|undefined,preparing=false,confirmed=false,committing=false,retry=0
+let previous:{queue:PlayQueue;request:PlayRequest;at:number;feedbackId:string}|undefined,lastReward:number|undefined,confirmedAt=0,stableAt=0,feedbackId=''
+const stalls=new StallTracker()
+const recovery=new RecoveryCoordinator({adapter,candidates,known:item=>mappings.get(item),cool:coolSource,discard:()=>player.cancelProbe(),probe:(source,detail,episode,position,deadline,signal)=>player.probe(playRequest(source,detail,episode,position),deadline,lastEvent?.metrics.finalUrl||queue.value?.episode.url||'',signal,lastEvent?.state==='error'?2:Math.max(2,(lastEvent?.metrics.networkMultiple||0)*1.1))})
+let setup=Promise.resolve()
+onLoad(query=>{if(!queue.value&&query?.id){setup=(async()=>{const source=sourceById(String(query.source||sourceState.currentId));if(!source)return;const detail=await loadDetail(source,String(query.id));const episode=directRoutes(detail)[0]?.episodes.find(x=>x.key===String(query.episode))||directRoutes(detail)[0]?.episodes[0];if(episode)queue.value={source,detail,episode}})()}})
+onLoad(()=>{if(TV_BUILD)setTitlePlayback(true)})
+onReady(()=>{off=player.listen(onEvent);void setup.then(()=>start()).catch(e=>{error.value=(e as Error).message})});onUnload(()=>{if(TV_BUILD)setTitlePlayback(false);disposed=true;generation++;recovery.cancel();off();player.close()})
+async function start(){if(!queue.value){error.value='请先选择要播放的剧集';return}generation++;cancelRecovery();retry=0;lastReward=undefined;lastRecovery=0;lastEvent=undefined;lastWrite=0;previous=undefined;error.value='';request=playRequest(queue.value.source,queue.value.detail,queue.value.episode,queue.value.position||0);feedbackId=request.sessionId;try{await player.open(request)}catch(e){error.value=(e as Error).message}}
+function cancelRecovery(resetStalls=true){recovery.cancel();prepared=undefined;preparing=false;confirmed=false;confirmedAt=0;stableAt=0;waitingAt=0;if(resetStalls)stalls.reset()}
+function save(event:PlaybackEvent){if(!request)return;library.saveProgress({...request.progress,position:event.position,duration:event.duration,updatedAt:Date.now(),ended:event.state==='ended'})}
+function onEvent(event:PlaybackEvent){if(disposed||!request||event.sessionId!==request.sessionId)return;const before=lastEvent;lastEvent=event;sourceState.online=event.online;const now=Date.now();if(now-lastWrite>=5000||(before?.state!==event.state&&['paused','ended','error'].includes(event.state))){save(event);lastWrite=now}
+const reward=playbackReward(event);if(reward!==undefined&&reward!==lastReward&&!(event.state==='error'&&retry===0)){observe(feedbackId||request.sessionId,request.source.id,reward,'实际播放表现');lastReward=reward}
+if(event.action==='close'){back();return}if(event.action==='episodes'){back();return}if(event.action==='next'||event.action==='previous'){void change(event.action==='next'?1:-1);return}if(event.action==='seek'){generation++;cancelRecovery();return}
+if(event.action==='retry'){if(queue.value)queue.value={...queue.value,position:event.position};void start();return}
+if(event.state==='ended'){if(completion.take(event,request.sessionId))void change(1);return}
+if(!event.online||event.state==='paused'){generation++;cancelRecovery();return}
+const failed=event.state==='error',stalled=stalls.update(event.state,now,event.metrics.effectiveSeconds>0&&event.online)
+if((failed||stalled)&&!confirmed){confirmed=true;confirmedAt=now;lastRecovery=0}
+if(event.state==='buffering'&&event.metrics.effectiveSeconds>0){waitingAt||=now;stableAt=0}else if(event.state!=='error'){waitingAt=0;if(event.state==='playing'&&!committing){stableAt||=now;if(now-stableAt>=2000){if(prepared||preparing){generation++;cancelRecovery(false)}confirmed=false;confirmedAt=0}}}
+if(failed&&previous&&now-previous.at<8000){void rollback();return}
+if(failed&&retry===0&&queue.value){retry=1;generation++;cancelRecovery();request=playRequest(queue.value.source,queue.value.detail,queue.value.episode,event.position);lastEvent=undefined;status.value='正在重新连接视频…';void player.open(request).catch(()=>{error.value='视频重试失败'});return}
+if((failed||stalled||(waitingAt&&now-waitingAt>=1000))&&sourceState.mode==='auto'&&now-lastRecovery>30000){void prepare()}
+if(prepared&&confirmed&&!committing)void applyRecovery(prepared)
+if(failed&&sourceState.mode==='fixed'){error.value='视频暂时无法播放，请重试或在设置中调整片库';return}
+if(failed&&!preparing&&!prepared){error.value='暂未确认可接力的资源，请稍后重试'}
+}
+async function prepare(){if(preparing||prepared||!queue.value||!request||disposed)return;preparing=true;lastRecovery=Date.now();const current=generation,original=queue.value,session=request.sessionId;status.value='正在优化播放…';try{const plan=await recovery.prepare(original.detail,original.episode,lastEvent?.position||0,()=>!disposed&&generation===current&&request?.sessionId===session&&sourceState.mode==='auto');if(generation!==current||disposed)return;if(plan){prepared=plan;if(confirmed)await applyRecovery(plan)}}finally{if(current===generation)preparing=false}}
+async function applyRecovery(plan:RecoveryPlan){if(committing||!queue.value||!request||disposed||sourceState.mode!=='auto')return;const deadline=Math.max(plan.deadline,(confirmedAt||Date.now())+RECOVERY_VERIFY_MS)+RECOVERY_COMMIT_MS;if(Date.now()>=deadline){cancelRecovery(false);return}committing=true;const current=generation,original=queue.value,oldRequest=request,position=lastEvent?.position||0;try{
+if(plan.match.level==='work'){mappings.learn(original.detail,plan.match.detail);catalogCache.saveDetail(plan.match.detail);selectSource(plan.source.id);writeLocal(`freetv:v3:resume:${plan.source.id}:${plan.match.detail.id}`,{position,episodeLabel:original.episode.label});generation++;recovery.cancel();player.close();uni.redirectTo({url:`/pages/detail/detail?source=${plan.source.id}&id=${encodeURIComponent(plan.match.detail.id)}`});return}
+const committed=await player.commit(plan.probe.token!,position,deadline);if(!committed||disposed||generation!==current){if(committed)await player.rollback();prepared=undefined;recovery.cancel();lastRecovery=Date.now();return}mappings.learn(original.detail,plan.match.detail);previous={queue:original,request:oldRequest,at:Date.now(),feedbackId};queue.value={source:plan.source,detail:plan.match.detail,episode:plan.match.episode,position};request=playRequest(plan.source,plan.match.detail,plan.match.episode,position);request.sessionId=plan.probe.sessionId!;feedbackId=request.sessionId;selectSource(plan.source.id);catalogCache.saveDetail(plan.match.detail);playQueue.set(queue.value);prepared=undefined;confirmed=false;confirmedAt=0;stalls.reset();retry=0;lastReward=undefined;error.value='';status.value='已恢复播放'
+}catch{prepared=undefined;recovery.cancel();lastRecovery=Date.now()}finally{committing=false}}
+async function rollback(){if(!previous)return;const old=previous;previous=undefined;generation++;cancelRecovery();if(await player.rollback()){queue.value=old.queue;request=old.request;feedbackId=old.feedbackId;lastReward=undefined;selectSource(old.queue.source.id);playQueue.set(old.queue)}}
+async function change(delta:number){if(!queue.value)return;const episode=adjacentEpisode(queue.value.detail,queue.value.episode,delta);if(!episode){if(delta>0&&lastEvent?.state==='ended')back();return}if(lastEvent&&lastEvent.state!=='ended')save(lastEvent);queue.value={...queue.value,episode,position:0};playQueue.set(queue.value);await start()}
+function back(){if(lastEvent)save(lastEvent);generation++;cancelRecovery();player.close();uni.navigateBack({fail:()=>uni.reLaunch({url:'/pages/index/index'})})}
+</script>
+<style scoped>.player-page{position:fixed;inset:0;background:#101820;color:#edf6fa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:30px;text-align:center}.player-symbol{font-size:40px;color:#8fc9e2}.player-page .hint{color:#a5c6d6}.status{font-size:13px;color:#bfd2dc}.actions{display:flex;gap:12px}.actions button{padding:12px 20px;font-size:13px}</style>

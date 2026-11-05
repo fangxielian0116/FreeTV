@@ -1,0 +1,7 @@
+{
+  "minSdkVersion": 23,
+  "dependencies": [
+    "io.github.carguo:gsyvideoplayer-java:14.0.0",
+    { "id": "io.github.carguo:gsyvideoplayer-exo2", "source": "implementation('io.github.carguo:gsyvideoplayer-exo2:14.0.0') { exclude group: 'androidx.media3', module: 'media3-cast' }" }
+  ]
+}
