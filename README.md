@@ -10,13 +10,14 @@
   <img src="https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript&logoColor=white" alt="TypeScript 5.6">
 </p>
 <p align="center">
-  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#构建-apk">构建 APK</a> · <a href="docs/github-actions.md">在线打包</a> · <a href="#开发文档">开发文档</a>
+  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#构建-apk">构建 APK</a> · <a href="#开发文档">开发文档</a> · <a href="#免责声明">免责声明</a>
 </p>
 
 FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin 接入 GSYVideoPlayer 与 Media3。手机与 TV 共用目录、收藏、进度和播放恢复逻辑，分别提供触屏与遥控器交互。
 
 ## 功能
 
+- **国内外影视资源**，汇集西瓜、魔都、非凡等第三方公开片源，涵盖国产剧、港台剧、日韩剧、欧美剧等国内外主流影视内容，并支持浏览电影、综艺和动漫。
 - **目录与搜索**：分类浏览、搜索、详情和选集；设置中可选自动或固定片库。
 - **原生播放**：播放、暂停、倍速、切集、进度保存和自动播放下一集。
 - **本机记录**：收藏、观看历史和进度保存在设备上，并绑定对应来源。
@@ -59,7 +60,7 @@ npm run prepare:native
 npm run check
 ```
 
-也可使用默认目录 `.tools/HBuilderX-5.26/HBuilderX/`。完整 Kotlin 源码保存在仓库；Maven 依赖、classpath 和编译产物在新机器重新生成。Linux 使用官方完整 CLI 包，见 [在线构建指南](docs/github-actions.md)。
+也可使用默认目录 `.tools/HBuilderX-5.26/HBuilderX/`。完整 Kotlin 源码保存在仓库；Maven 依赖、classpath 和编译产物在新机器重新生成。Linux 使用官方完整 CLI 包，见 [本地构建与签名](docs/build.md)。
 
 ## 构建 APK
 
@@ -76,13 +77,6 @@ npm run check
 
 `build:android` 和 `build:tv` 仅生成应用资源；独立 APK 必须运行 `pack`。本地打包前启动 HBuilderX 并登录有权使用当前 AppID 的 DCloud 账号，将签名配置保存在 `.signing/android-test.json`。已有安装需要沿用原签名；全新项目可运行 `node scripts/prepare-android-signing.mjs` 创建本地测试签名。详见 [本地构建与签名](docs/build.md)。
 
-### GitHub 在线打包
-
-- **Checks and resource builds**：推送或 PR 后自动检查、测试并构建手机 / TV 的 H5 和 Android 资源，上传产物。
-- **Android APK**：Actions 中手动选择 `phone`、`tv` 或 `both`，使用 GitHub Secrets 中的 DCloud 账号和 Android 签名生成 APK。
-
-工作流从官方地址安装固定版本 HBuilderX，重新安装 npm 和 Maven 依赖，不需要开发电脑在线，也不使用历史 APK。APK 工作流需要先配置账号与签名 Secrets，详见 [GitHub Actions 指南](docs/github-actions.md)。
-
 ## 项目结构
 
 ```text
@@ -95,7 +89,7 @@ src/uni_modules/freetv-player/    UTS / Kotlin 原生播放器
 scripts/                         构建、打包与验证工具
 tests/                           业务逻辑和 Android 测试
 docs/                            构建、交互和实现说明
-.github/workflows/               自动检查与在线 APK 打包
+.github/workflows/               持续集成工作流
 ```
 
 功能修改以主项目 `src/` 为准；`.cache/` 中的 staging 目录由脚本生成。依赖、工具、缓存、调研资料、签名、日志和构建产物通过 `.gitignore` 排除。
@@ -103,7 +97,6 @@ docs/                            构建、交互和实现说明
 ## 开发文档
 
 - [本地构建与签名](docs/build.md)
-- [GitHub Actions 在线构建](docs/github-actions.md)
 - [Android 构建与设备测试](docs/device-setup.md)
 - [TV 开发、遥控器和验收](docs/tv-guide.md)
 - [手机与 TV 的共享功能](docs/shared-mobile-tv.md)
@@ -119,4 +112,10 @@ docs/                            构建、交互和实现说明
 - [js-spatial-navigation](https://github.com/luke-chang/js-spatial-navigation)：TV 空间焦点导航。
 - [pinyin-pro](https://github.com/zh-lx/pinyin-pro)、[opencc-js](https://github.com/nk2028/opencc-js)：拼音检索与繁简处理。
 
-第三方依赖遵循各自的许可证。仓库不包含视频文件；目录和播放链接的可用性取决于第三方来源及网络环境。
+第三方依赖遵循各自的许可证。
+
+## 免责声明
+
+FreeTV 提供影视目录检索和播放工具。片名、封面、简介及播放链接均来自第三方公开网络，视频由各来源站点提供和托管。FreeTV 独立于这些片源及相关视频平台，影视内容和品牌标识的权利归各自权利人所有。
+
+请仅访问和播放你有权使用的内容。资源可用性取决于第三方服务及网络环境。
