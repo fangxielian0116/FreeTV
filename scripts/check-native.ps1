@@ -1,6 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
-$plugins = Join-Path $projectRoot '.tools\HBuilderX-5.26\HBuilderX\plugins'
+$hbuilderxExecutable = if ($env:FREETV_HBUILDERX) { $env:FREETV_HBUILDERX } else { Join-Path $projectRoot '.tools\HBuilderX-5.26\HBuilderX\HBuilderX.exe' }
+$plugins = Join-Path (Split-Path $hbuilderxExecutable -Parent) 'plugins'
 $env:JAVA_HOME = Join-Path $plugins 'amazon-corretto'
 $nativeClasspath = Get-Content -LiteralPath (Join-Path $projectRoot '.cache\native-check\classpath.txt') -Raw
 $nativeSources = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src\uni_modules\freetv-player\utssdk\app-android') -Filter '*.kt' -File | Select-Object -ExpandProperty FullName

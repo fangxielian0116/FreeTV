@@ -5,13 +5,14 @@
 ## 构建
 
 ```powershell
+npm.cmd ci
+node scripts/prepare-native-check.mjs
 npm.cmd run typecheck
 npm.cmd test
 npm.cmd run build:h5
 npm.cmd run build:android
-node scripts/prepare-native-check.mjs
 .\scripts\check-native.ps1
-node scripts/pack-android.mjs
+npm.cmd run pack:android
 ```
 
 资源构建和 Kotlin 编译通过不等于 APK 验收通过。独立 APK 使用安心打包：原生模块、依赖和 Android 配置交给 DCloud 构建，前端资源和签名在本机合入。自定义调试基座不支持安心打包，本工程已禁用该云端路径。签名配置在 `.signing/android-test.json`，不得打印或分发；重建时继续使用已有身份。

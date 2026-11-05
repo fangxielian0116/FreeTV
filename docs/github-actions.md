@@ -31,6 +31,8 @@ Windows 可复制证书的 Base64 到剪贴板，再粘贴进 Secret 输入框�
 
 ## 生成与下载 APK
 
+可先手动运行 **Verify DCloud login**，仅验证两个 DCloud Secrets，不需要上传 Android 签名。该检查不发起打包，也不会输出登录原始日志。
+
 1. 打开 **Actions → Android APK → Run workflow**。
 2. 在 `main` 上选择 `phone`、`tv` 或 `both`。
 3. 工作流验证 Secrets、安装依赖、执行检查，登录 DCloud 并运行安心打包。
