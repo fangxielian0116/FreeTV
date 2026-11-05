@@ -27,3 +27,16 @@ Thumbs.db
 **/material/
 **/build-profile.json5
 **/local.properties
+
+# 本地模拟器快捷入口与依赖旧产物的 0.2.0 排查脚本
+/启动安卓模拟器.cmd
+/scripts/check-startup-backups.ts
+/scripts/check-startup-release.ps1
+/scripts/check-startup-stream.mjs
+/scripts/pack-android-local-ui.mjs
+/scripts/report-startup-analysis.mjs
+/scripts/report-startup-optimization.mjs
+/scripts/verify-android-artifact.mjs
+/scripts/verify-home-categories.mjs
+/scripts/verify-posters.mjs
+/scripts/verify-ui-artifact.mjs
