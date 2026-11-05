@@ -5,7 +5,9 @@ import { hbuilderx } from '../hbuilderx.mjs'
 export function login(root) {
   if (!process.env.DCLOUD_USERNAME || !process.env.DCLOUD_PASSWORD) throw new Error('Configure DCLOUD_USERNAME and DCLOUD_PASSWORD secrets')
   const { cli, home } = hbuilderx(root)
-  const opened = spawnSync(cli, ['open'], { cwd: home, encoding: 'utf8', timeout: 90000 })
+  // The Linux daemon inherits stdout/stderr from `cli open`. Captured pipes
+  // would keep spawnSync waiting after the CLI client has already exited.
+  const opened = spawnSync(cli, ['open'], { cwd: home, stdio: 'ignore', timeout: 90000 })
   if (opened.error || opened.status !== 0) throw new Error('HBuilderX CLI could not start')
   const result = spawnSync(cli, ['user', 'login', '--username', process.env.DCLOUD_USERNAME,
     '--password', process.env.DCLOUD_PASSWORD], { cwd: home, encoding: 'utf8', timeout: 90000 })
