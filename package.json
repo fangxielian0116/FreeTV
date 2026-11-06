@@ -7,7 +7,7 @@
     "dev:h5": "uni --host 127.0.0.1 --port 5173",
     "build:h5": "node scripts/build-phone.mjs --h5",
     "build:android": "node scripts/build-phone.mjs",
-    "pack:android": "node scripts/pack-android.mjs --staged",
+    "pack:android": "node scripts/pack-android-offline.mjs phone",
     "pack:offline": "node scripts/pack-android-offline.mjs",
     "typecheck": "vue-tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
@@ -17,7 +17,7 @@
     "build:tv": "node scripts/build-tv.mjs",
     "build:tv:h5": "node scripts/build-tv.mjs --h5",
     "dev:tv": "node scripts/build-tv.mjs --h5 --dev",
-    "pack:tv": "node scripts/pack-android.mjs --tv"
+    "pack:tv": "node scripts/pack-android-offline.mjs tv"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-5020620260917001",

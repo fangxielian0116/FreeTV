@@ -12,13 +12,7 @@ npm.cmd run build:tv:h5
 npm.cmd run pack:tv
 ```
 
-HBuilderX 未运行时，先执行 `.tools/HBuilderX-5.26/HBuilderX/cli.exe open`。TV 构建在 `.cache/android-tv-stage` 生成独立清单、横屏配置、普通/leanback 启动入口和 banner；不会修改手机清单及手机 APK。签名数据继续只从本机 `.signing` 读取。
-
-云端排队期间若继续调整页面，使用 `node scripts/build-tv.mjs --preview` 生成独立预览构建目录，避免覆盖正在打包的目录。云端原生包返回后执行 `node scripts/finalize-tv.mjs` 合入当前 UI。该命令检查源码和编译产物指纹、原生源码哈希、签名一致性及全部原生 dex/so 保持不变。TV 原生代码有变化时，必须重新安心打包。
-
-云打包版本输出到 `artifacts/tv/`，离线版本输出到 `artifacts/offline/tv/`。使用已有基座合包时，`tv-build-receipt.json` 记录对应源码、原生基座及最终包校验值。`FreeTV-TV-UI-preview.apk` 只使用手机原生基座，不能作为 TV 发布包。
-
-TV staging 使用内置 Kotlin 编译器将当前播放器源码编成 JAR，通过 [uni-app 官方 libs 入口](https://uniapp.dcloud.net.cn/plugin/uts-plugin.html#libs) 打包，避免 HBuilderX 5.26 的 Kotlin 声明生成器解析私有实现时异常退出。仓库保留全部 Kotlin 源码；仅 staging 中移除重复源码。原生库的源码和 JAR 哈希写入构建记录，依赖仍沿用原有 GSY/Media3 配置。
+`pack:tv` 使用 [Gradle 离线打包](build.md#gradle-离线打包)，从共用的 `src/` 生成 TV 专用资源和 Kotlin 代码，应用横屏设置、TV 启动入口与 banner。APK 和 `offline-build-receipt.json` 输出到 `artifacts/offline/tv/`。开发时可用 `npm run dev:tv` 在 H5 中预览页面。
 
 首页的搜索入口与 Logo、导航放在同一行，搜索入口和继续观看选中时只改变描边和背景。提交搜索后收起键盘，结果占据页面并将焦点移到第一张海报。可用“修改搜索”恢复当前关键词。播放器控制栏保留上一集、下一集及带当前倍率的倍速按钮，错误时增加重试。控制栏隐藏时，确认键暂停或继续，左右快进或快退，菜单键和上下键打开控制栏。返回键先收起控制栏，再返回详情选集。
 

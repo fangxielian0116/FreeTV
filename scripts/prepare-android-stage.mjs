@@ -25,7 +25,7 @@ export function prepareAndroidStage(root, target = 'phone', preview = false, opt
     const native=join(stagedSource,'uni_modules/freetv-player/utssdk/app-android')
     const libs=join(native,'libs');mkdirSync(libs,{recursive:true})
     cpSync(nativeLibrary.output,join(libs,'freetv-player.jar'))
-    // The cloud packager gets a precompiled JAR. Gradle builds Kotlin from source.
+    // Resource builds use a precompiled JAR. Gradle builds Kotlin from source.
     for(const file of readdirSync(native).filter(name=>name.endsWith('.kt')))rmSync(join(native,file))
     writeFileSync(join(stage,'native-library-receipt.json'),JSON.stringify(nativeLibrary,null,2))
   }

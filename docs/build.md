@@ -4,7 +4,7 @@
 
 使用 Node.js 24（最低 22.12）和 HBuilderX 5.26.2026091802。DCloud npm 依赖已按 uni-app 5.26 成组锁定，不要单独升级一个包。
 
-Windows 安装 HBuilderX 及 App 开发、Android UTS、内置 JDK/Kotlin 和安心打包组件，然后执行：
+Windows 安装 HBuilderX 及 App 开发、Android UTS 和内置 JDK/Kotlin 组件，然后执行：
 
 ```powershell
 $env:FREETV_HBUILDERX = 'C:\Tools\HBuilderX\HBuilderX.exe'
@@ -24,7 +24,7 @@ Linux 使用 [官方 HBuilderX Linux CLI 完整包](https://hx.dcloud.net.cn/Tut
 
 ## Gradle 离线打包
 
-手机和 TV 共用 `src/manifest.json` 中的包名与版本，分别生成触屏和遥控界面的 APK。npm 编译器生成前端资源和 UTS 的 Kotlin 源码，Gradle 从这些源码和本机 SDK 重新组装应用。首次准备 Gradle 依赖需要联网，出包过程不提交 DCloud 云打包任务。
+手机和 TV 共用 `src/` 中的应用源码、包名和版本，分别生成触屏和遥控界面的 APK。npm 编译器生成前端资源和 UTS 的 Kotlin 源码，打包脚本将这些产物和 `scripts/android/gradle/` 中的配置模板组装成 `.cache/` 下的临时工程。首次准备 Gradle 依赖需要联网。
 
 1. 准备 JDK 17 或更新版、Gradle 8.14.5、Android SDK Platform 36 和 Build Tools 36.0.0。
 2. 从 [DCloud Android 离线 SDK 历史版本](https://nativesupport.dcloud.net.cn/AppDocs/download/android.html) 获取 `Android-SDK_5.26.82680_20260914.zip`，解压后应包含 `SDK/libs` 和 `SDK/assets/data`。
@@ -39,20 +39,18 @@ npm ci
 npm run pack:offline
 ```
 
-默认工具目录为 `.tools/AndroidSDK`、`.tools/gradle-8.14.5` 和 `.tools/DCloud-Android-SDK-5.26`。`JAVA_HOME` 未设置时使用已安装 HBuilderX 的 JDK。可以用 `npm run pack:offline -- phone` 或 `npm run pack:offline -- tv` 单独打一个版本。通过签名、包名、版本和启动入口检查后，APK 与校验记录会写入 `artifacts/offline/phone/` 和 `artifacts/offline/tv/`。
+默认工具目录为 `.tools/AndroidSDK`、`.tools/gradle-8.14.5` 和 `.tools/DCloud-Android-SDK-5.26`。`JAVA_HOME` 未设置时使用已安装 HBuilderX 的 JDK。`npm run pack:android` 和 `npm run pack:tv` 分别通过同一脚本打一个版本。通过签名、包名、版本和启动入口检查后，APK 与校验记录会写入 `artifacts/offline/phone/` 和 `artifacts/offline/tv/`。
 
 在已装有历史版本的手机和 TV 模拟器上覆盖安装新 APK，验证应用启动、原生播放和 TV 遥控入口。按[设备测试说明](device-setup.md)准备测试素材和模拟器后，运行对应验收脚本。
 
 ```powershell
-.\scripts\check-phone-release.ps1 -ReceiptFile artifacts/offline/phone/offline-build-receipt.json
-.\scripts\check-tv-release.ps1 -ReceiptFile artifacts/offline/tv/offline-build-receipt.json
+.\scripts\check-phone-release.ps1
+.\scripts\check-tv-release.ps1
 ```
 
 离线 SDK、AppKey、签名和打包产物保存在本机忽略目录。
 
-## 安心打包与签名
-
-打开 HBuilderX，登录有权使用 AppID `__UNI__E70B510` 的 DCloud 账号。使用官方 [CLI 安心打包](https://hx.dcloud.net.cn/cli/pack)，需要账号权限及可用打包配额。
+## Android 签名
 
 已有安装必须沿用原来的证书。将证书保存在本机 `.signing/`，并创建 `.signing/android-test.json`：
 
@@ -67,15 +65,8 @@ npm run pack:offline
 
 示例值均需替换。首次独立部署且没有历史签名时，可用 `node scripts/prepare-android-signing.mjs` 创建测试证书，不会覆盖已有签名。
 
-```powershell
-npm run pack:android
-npm run pack:tv
-```
-
-手机输出 `artifacts/phone/FreeTV-0.3.4-phone.apk`，TV 输出 `artifacts/tv/FreeTV-0.3.4-tv.apk`，同时记录源码、原生输入及 APK 哈希。两端从 `src/manifest.json` 读取同一版本名和版本号。需要看到最终文件和成功记录，单凭 CLI 返回码不能确认打包成功。
-
 ## 源码上传范围
 
 源码、原生模块、品牌资源、依赖锁文件、构建脚本、测试和文档进入 Git。
 
-`.gitignore` 排除依赖、SDK / 工具、staging、构建产物、调研下载、日志、环境配置、签名与证书。安装和构建步骤重新生成派生文件；账号和签名由本机配置或 [GitHub Secrets](github-actions.md) 提供，不上传开发电脑的登录状态或 classpath。
+`.gitignore` 排除依赖、SDK / 工具、staging、构建产物、调研下载、日志、环境配置、签名与证书。安装和构建步骤重新生成派生文件。离线 AppKey 和签名由本机配置或 [GitHub Secrets](github-actions.md) 提供。

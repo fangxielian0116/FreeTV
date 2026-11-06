@@ -2,7 +2,7 @@ param([switch]$NativeOnly,[switch]$Resume,[string]$ReceiptFile)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
-if(-not $ReceiptFile){$ReceiptFile=Join-Path $root 'artifacts/tv/tv-build-receipt.json'}
+if(-not $ReceiptFile){$ReceiptFile=Join-Path $root 'artifacts/offline/tv/offline-build-receipt.json'}
 $ReceiptFile=(Resolve-Path -LiteralPath $ReceiptFile).ProviderPath
 $out=Split-Path -Parent $ReceiptFile
 $adb=Join-Path $root '.tools\AndroidSDK\platform-tools\adb.exe'

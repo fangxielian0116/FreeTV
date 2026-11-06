@@ -52,7 +52,7 @@ npm run dev:h5
 
 ### 准备原生构建
 
-安装 **HBuilderX 5.26.2026091802**，包含 App 开发、Android UTS、内置 JDK/Kotlin 和安心打包组件。设置路径并准备固定版本原生依赖：
+安装 **HBuilderX 5.26.2026091802**，包含 App 开发、Android UTS 和内置 JDK/Kotlin。设置路径并准备资源构建所需的原生依赖：
 
 ```powershell
 $env:FREETV_HBUILDERX = 'C:\Tools\HBuilderX\HBuilderX.exe'
@@ -73,10 +73,10 @@ npm run check
 | `npm run build:tv:h5` | TV H5 资源 → `dist/build/tv-h5/` |
 | `npm run build:tv` | TV Android 资源 → `dist/build/tv-app/` |
 | `npm run pack:offline` | 用 Gradle 离线生成手机和 TV 的签名 APK → `artifacts/offline/` |
-| `npm run pack:android` | 手机 APK → `artifacts/phone/FreeTV-0.3.4-phone.apk` |
-| `npm run pack:tv` | TV APK → `artifacts/tv/FreeTV-0.3.4-tv.apk` |
+| `npm run pack:android` | 仅打手机 APK → `artifacts/offline/phone/FreeTV-0.3.4-phone.apk` |
+| `npm run pack:tv` | 仅打 TV APK → `artifacts/offline/tv/FreeTV-0.3.4-tv.apk` |
 
-`build:android` 和 `build:tv` 生成应用资源。Gradle 离线打包使用匹配版本的 DCloud Android 离线 SDK、离线 AppKey 和本地签名。`pack:android` 和 `pack:tv` 使用 HBuilderX 安心打包。已有安装需要沿用原签名。详见 [本地构建与签名](docs/build.md)。
+`build:android` 和 `build:tv` 生成应用资源。所有 APK 打包命令都使用同一套 Gradle 流程，读取 `src/`、DCloud Android 离线 SDK、离线 AppKey 和签名配置。已有安装需要沿用原签名。详见 [本地构建与签名](docs/build.md)。
 
 在 GitHub 上手动运行 **Android APK**，可由 GitHub Actions 使用 Gradle 构建和签名手机、TV 或双端 APK。打包完成后在工作流页面下载产物。配置步骤见 [GitHub Actions 在线构建](docs/github-actions.md)。
 
@@ -90,14 +90,14 @@ src/services/                    目录、配置、收藏、历史和进度
 src/pages/                       首页、搜索、详情、设置和播放页
 src/platform/                    平台适配和播放器桥接
 src/uni_modules/freetv-player/    UTS / Kotlin 原生播放器
-android-offline/                 Android 离线打包 Gradle 工程模板
 scripts/                         构建、打包与验证工具
+scripts/android/gradle/          打包用 Gradle 和 Android 配置模板
 tests/                           业务逻辑和 Android 测试
 docs/                            构建、交互和实现说明
 .github/workflows/               持续集成工作流
 ```
 
-功能修改以主项目 `src/` 为准；`.cache/` 中的 staging 目录由脚本生成。依赖、工具、缓存、调研资料、签名、日志和构建产物通过 `.gitignore` 排除。
+手机与 TV 共用 `src/` 中的应用源码。打包脚本按目标生成 `.cache/` 中的临时 Gradle 工程。依赖、工具、缓存、调研资料、签名、日志和构建产物通过 `.gitignore` 排除。
 
 ## 开发文档
 

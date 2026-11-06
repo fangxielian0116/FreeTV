@@ -82,7 +82,11 @@ function offlineSdk() {
 function populateAndroidProject(project, sdk, builds) {
   const [{ manifest }] = builds
   const android = manifest['app-plus'].distribute.android
-  cpSync(join(root, 'android-offline'), project, { recursive: true })
+  const templateDirectory = join(root, 'scripts/android/gradle')
+  mkdirSync(project, { recursive: true })
+  for (const file of ['build.gradle', 'gradle.properties', 'settings.gradle']) {
+    copyFileSync(join(templateDirectory, file), join(project, file))
+  }
   writeFileSync(join(project, 'freetv-build.json'), JSON.stringify({
     packageName: android.packagename, minSdk: android.minSdkVersion, abis: android.abiFilters,
     versionName: manifest.versionName, versionCode: Number(manifest.versionCode),
@@ -90,14 +94,19 @@ function populateAndroidProject(project, sdk, builds) {
   }))
 
   const main = join(project, 'src/main')
-  const manifestFile = join(main, 'AndroidManifest.xml')
+  const values = join(main, 'res/values')
+  const tv = join(project, 'src/tv')
+  mkdirSync(values, { recursive: true })
+  mkdirSync(tv, { recursive: true })
+  copyFileSync(join(templateDirectory, 'styles.xml'), join(values, 'styles.xml'))
+  copyFileSync(join(templateDirectory, 'AndroidManifest.tv.xml'), join(tv, 'AndroidManifest.xml'))
   const permissions = android.permissions.map(permission => {
     if (!/^<uses-permission android:name="[A-Za-z0-9._]+"\s*\/>$/.test(permission)) {
       throw new Error('Unsupported permission declaration in src/manifest.json')
     }
     return permission
   })
-  writeFileSync(manifestFile, readFileSync(manifestFile, 'utf8')
+  writeFileSync(join(main, 'AndroidManifest.xml'), readFileSync(join(templateDirectory, 'AndroidManifest.xml'), 'utf8')
     .replace('<!-- FreeTV permissions -->', permissions.join('\n    ')))
 
   const data = join(main, 'assets/data')
@@ -211,7 +220,7 @@ function packageOffline(selection) {
     const apk = join(output, filename)
     copyFileSync(candidate, apk)
     writeFileSync(join(output, 'offline-build-receipt.json'), JSON.stringify({ ...receipt, apk, at: new Date().toISOString() }, null, 2))
-    console.log(`Verified signed ${receipt.target} APK at ${apk}`)
+    console.log(`Verified signed ${receipt.target} APK at ${apk} (certificate SHA-256: ${receipt.certificateSha256})`)
   }
 }
 

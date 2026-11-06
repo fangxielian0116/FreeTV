@@ -15,9 +15,9 @@ npm.cmd run build:android
 npm.cmd run pack:android
 ```
 
-资源构建和 Kotlin 编译通过不等于 APK 验收通过。独立 APK 使用安心打包：原生模块、依赖和 Android 配置交给 DCloud 构建，前端资源和签名在本机合入。自定义调试基座不支持安心打包，本工程已禁用该云端路径。签名配置在 `.signing/android-test.json`，不得打印或分发；重建时继续使用已有身份。
+`pack:android` 使用 [Gradle 离线打包](build.md#gradle-离线打包)，读取 `.signing/android-test.json` 中的原签名。手机 APK 与 `offline-build-receipt.json` 输出到 `artifacts/offline/phone/`。
 
-每次打包会保存 `artifacts/0.2.0/native-build-input.zip` 和原生输入哈希记录。检查 HBuilderX 的实际生成结果，并对最终文件完成签名检查、覆盖安装和运行验证。
+用 `scripts/check-phone-release.ps1` 验证 APK 校验值、覆盖安装和运行行为。
 
 ## 模拟器与真机
 
@@ -25,7 +25,7 @@ npm.cmd run pack:android
 
 ```powershell
 .\scripts\start-android-emulator.ps1 -Headless
-.\scripts\run-android.ps1 -Apk 'E:\FreeTV\dist\release\apk\实际安装包.apk'
+.\scripts\run-android.ps1 -Apk 'artifacts\offline\phone\FreeTV-0.3.4-phone.apk'
 ```
 
 图形渲染有异常时可在关闭本项目模拟器后使用 `-ColdBoot -Gpu swiftshader` 冷启动，保留模拟器数据。真机需本人确认 USB 调试授权，随后使用相同的安装脚本并指定设备编号。
