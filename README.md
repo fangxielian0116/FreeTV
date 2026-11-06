@@ -10,10 +10,19 @@
   <img src="https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript&logoColor=white" alt="TypeScript 5.6">
 </p>
 <p align="center">
-  <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#构建-apk">构建 APK</a> · <a href="#开发文档">开发文档</a> · <a href="#免责声明">免责声明</a>
+  <a href="#下载安装">下载安装</a> · <a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#编译与打包">编译与打包</a> · <a href="#开发文档">开发文档</a>
 </p>
 
 FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin 接入 GSYVideoPlayer 与 Media3。手机与 TV 共用目录、收藏、进度和播放恢复逻辑，分别提供触屏与遥控器交互。
+
+## 下载安装
+
+在 GitHub Releases 下载已签名的 APK。仓库为私有仓库，下载需要登录有访问权限的 GitHub 账号。[下载最新版](https://github.com/fangxielian0116/FreeTV/releases/latest)
+
+- **Android 手机**用 `FreeTV-<版本>-phone.apk`，支持触屏操作。
+- **Android TV** 用 `FreeTV-<版本>-tv.apk`，支持遥控器和电视桌面入口。
+
+最低支持 Android 6.0。两个版本共用包名 `com.fxl.freetv.demo`，同一设备上只能安装其中一个。覆盖升级需沿用原签名。
 
 ## 功能
 
@@ -33,7 +42,7 @@ FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin �
 | Android TV | 0.3.4 / 304 | 横屏界面、遥控器交互 |
 | H5 | 开发预览 | 页面调试，不能替代 Android 原生播放验收 |
 
-最低支持 Android 6.0。手机与 TV 当前共用包名 `com.fxl.freetv.demo`，在同一设备上安装时会覆盖已有版本。已有手机 APK 原生播放与 TV 模拟器验收记录；海信真机尚未验证。本机历史资料位于 `artifacts/`，不随源码提交。
+手机原生播放和 TV 模拟器已有验收记录。海信真机尚未验证。
 
 ## 快速开始
 
@@ -43,42 +52,44 @@ FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin �
 git clone https://github.com/fangxielian0116/FreeTV.git
 cd FreeTV
 npm ci
-npm run typecheck
-npm test
 npm run dev:h5
 ```
 
 浏览器打开 <http://127.0.0.1:5173>。Windows PowerShell 如限制脚本执行，可将 `npm` 替换为 `npm.cmd`。
 
-### 准备原生构建
+## 编译与打包
 
-安装 **HBuilderX 5.26.2026091802**，包含 App 开发、Android UTS 和内置 JDK/Kotlin。设置路径并准备资源构建所需的原生依赖：
+### GitHub Actions 构建签名 APK
+
+在仓库打开 **Actions → Android APK → Run workflow**，选择 `main` 和目标 `both`、`phone` 或 `tv`。成功后在该次运行的 **Artifacts** 下载签名 APK。首次配置需要离线 AppKey、Android 签名 Secrets 和固定版本的 SDK 附件。[GitHub Actions 配置说明](docs/github-actions.md)
+
+### 本地构建签名 APK
+
+准备 **JDK 17+、Gradle 8.14.5、Android SDK Platform 36、Build Tools 36.0.0、DCloud Android 离线 SDK 5.26.82680_20260914**，以及与包名和签名证书匹配的离线 AppKey。签名和工具路径按详细说明配置。[本地构建与签名](docs/build.md#gradle-离线打包)
 
 ```powershell
-$env:FREETV_HBUILDERX = 'C:\Tools\HBuilderX\HBuilderX.exe'
-npm run prepare:native
-npm run check
+npm ci
+npm run pack:offline
 ```
 
-也可使用默认目录 `.tools/HBuilderX-5.26/HBuilderX/`。完整 Kotlin 源码保存在仓库；Maven 依赖、classpath 和编译产物在新机器重新生成。Linux 使用官方完整 CLI 包，见 [本地构建与签名](docs/build.md)。
+| 目标 | 命令 | APK 输出 |
+| --- | --- | --- |
+| 手机与 TV | `npm run pack:offline` | 下列两个目录 |
+| 仅手机 | `npm run pack:android` | `artifacts/offline/phone/` |
+| 仅 TV | `npm run pack:tv` | `artifacts/offline/tv/` |
 
-## 构建 APK
+本地和 GitHub Actions 共用同一套 Gradle 打包流程。首次下载工具和依赖需要联网，打包无需登录 DCloud。
 
-| 命令 | 用途 / 输出 |
-| --- | --- |
-| `npm run dev:h5` | 手机页面预览，端口 5173 |
-| `npm run dev:tv` | TV 页面预览，端口 5174；需原生工具链 |
-| `npm run prepare:native` | Maven 依赖与当前机器的原生 classpath |
-| `npm run check` | 类型检查、测试、手机 H5 与 Android 资源构建 |
-| `npm run build:tv:h5` | TV H5 资源 → `dist/build/tv-h5/` |
-| `npm run build:tv` | TV Android 资源 → `dist/build/tv-app/` |
-| `npm run pack:offline` | 用 Gradle 离线生成手机和 TV 的签名 APK → `artifacts/offline/` |
-| `npm run pack:android` | 仅打手机 APK → `artifacts/offline/phone/FreeTV-0.3.4-phone.apk` |
-| `npm run pack:tv` | 仅打 TV APK → `artifacts/offline/tv/FreeTV-0.3.4-tv.apk` |
+### 开发检查与资源编译
 
-`build:android` 和 `build:tv` 生成应用资源。所有 APK 打包命令都使用同一套 Gradle 流程，读取 `src/`、DCloud Android 离线 SDK、离线 AppKey 和签名配置。已有安装需要沿用原签名。详见 [本地构建与签名](docs/build.md)。
+用 `npm run typecheck` 和 `npm test` 检查代码。编译 H5 和 Android 资源前，先配置 HBuilderX **5.26.2026091802** 和 Android UTS 组件，再运行 `npm run prepare:native`。[原生工具链配置](docs/build.md#工具与依赖)
 
-在 GitHub 上手动运行 **Android APK**，可由 GitHub Actions 使用 Gradle 构建和签名手机、TV 或双端 APK。打包完成后在工作流页面下载产物。配置步骤见 [GitHub Actions 在线构建](docs/github-actions.md)。
+| 目标 | H5 资源 | Android 资源 |
+| --- | --- | --- |
+| 手机 | `npm run build:h5` → `dist/build/h5/` | `npm run build:android` → `dist/build/app/` |
+| TV | `npm run build:tv:h5` → `dist/build/tv-h5/` | `npm run build:tv` → `dist/build/tv-app/` |
+
+以上命令输出资源。可安装的签名 APK 由 `pack:*` 命令生成。
 
 ## 项目结构
 
