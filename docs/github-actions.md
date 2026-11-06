@@ -1,6 +1,6 @@
 # GitHub Actions 在线构建
 
-工作流运行于 GitHub 托管的 Ubuntu 22.04，使用 Node.js 24 和官方 HBuilderX 5.26.2026091802 Linux 完整 CLI 包。从仓库源码构建，不需要开发电脑在线。
+工作流在 GitHub 托管的 Ubuntu 22.04 上使用 Node.js 24 从仓库源码构建。自动检查使用 HBuilderX 5.26.2026091802，签名 APK 使用 JDK 17、Gradle 8.14.5 和 Android SDK 36。
 
 ## 自动检查与资源构建
 
@@ -14,8 +14,7 @@
 
 | Secret | 值 |
 | --- | --- |
-| `DCLOUD_USERNAME` | 有权使用当前 AppID 的 DCloud 登录账号 |
-| `DCLOUD_PASSWORD` | DCloud 登录密码 |
+| `FREETV_DCLOUD_APPKEY` | 与 `src/manifest.json` 中的 AppID、Android 包名及原签名证书绑定的 DCloud Android 离线 AppKey |
 | `ANDROID_KEYSTORE_BASE64` | 原 Android JKS / keystore 文件的 Base64 内容 |
 | `ANDROID_KEY_ALIAS` | 证书别名 |
 | `ANDROID_KEY_PASSWORD` | 私钥密码 |
@@ -31,26 +30,23 @@ Windows 可复制证书的 Base64 到剪贴板，再粘贴进 Secret 输入框�
 
 ## 生成与下载 APK
 
-可先手动运行 **Verify DCloud login**，仅验证两个 DCloud Secrets，不需要上传 Android 签名。该检查不发起打包，也不会输出登录原始日志。
-
 1. 打开 **Actions → Android APK → Run workflow**。
 2. 在 `main` 上选择 `phone`、`tv` 或 `both`。
-3. 工作流验证 Secrets、安装依赖、执行检查，登录 DCloud 并运行安心打包。
+3. 工作流验证 Secrets、安装依赖、执行检查，再调用 `pack:offline` 对应的 Gradle 打包脚本。GitHub 托管的运行器完成编译和签名，无需登录 DCloud，也不占用云打包额度。
 4. 成功后从运行页面 **Artifacts** 下载 `FreeTV-目标-运行编号`，内含签名 APK 与构建记录，保留 14 天。
 
 签名文件不进入 artifact 或缓存；结束时清理临时签名配置。APK 工作流仅手动触发，不在 PR 上读取 Secrets，同一仓库的 APK 打包串行进行。
+
+工作流从私有仓库的 `build-sdk-5.26.82680-20260914` 预发布附件下载固定版本的 DCloud 离线 SDK 运行库，并校验 SHA-256。更新 SDK 时需同步更换依赖附件、校验值及打包脚本中的 SDK 版本。SDK 获取与 AppKey 配置见 [本地构建与签名](build.md)。
 
 ## 排查
 
 | 失败步骤 | 检查内容 |
 | --- | --- |
-| Validate required secrets | 六个 Secret 是否齐全、命名是否正确 |
-| 安装工具或 Maven 依赖 | 官方下载源是否可达，重跑失败任务 |
-| 原生编译 | HBuilderX 版本、路径及 Kotlin 错误 |
-| DCloud login | 账号密码、账号验证和 AppID 权限 |
-| 安心打包 | DCloud 配额、平台支持、证书别名与密码 |
+| Validate required secrets | 五个 Secret 是否齐全、命名是否正确 |
+| Install Android and Gradle build tools | Gradle 下载源是否可达，Android SDK 组件是否可安装 |
+| Download pinned DCloud offline SDK | SDK 附件和 SHA-256 是否与工作流匹配 |
+| Build signed APK | 编译日志、证书别名与密码、APK 签名和应用标识 |
 | Artifact 上传 | 前一步是否真正生成 APK |
 
-账号验证、AppID 权限和配额需由账号所有者配置。完成 Secrets 后，实际跑通一次 **Android APK** 才能确认该账号的在线 APK 打包已验收；资源构建成功不能替代此步骤。
-
-参考：[官方 Linux CLI](https://hx.dcloud.net.cn/Tutorial/install/linux-cli)、[登录命令](https://hx.dcloud.net.cn/cli/user)、[云打包与 CI](https://hx.dcloud.net.cn/cli/pack)。
+安装后若出现 AppKey 校验问题，请核对 AppKey 绑定的 AppID、包名和签名证书指纹，并在设备上验证应用启动。

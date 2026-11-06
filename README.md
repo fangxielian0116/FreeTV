@@ -78,6 +78,8 @@ npm run check
 
 `build:android` 和 `build:tv` 生成应用资源。Gradle 离线打包使用匹配版本的 DCloud Android 离线 SDK、离线 AppKey 和本地签名。`pack:android` 和 `pack:tv` 使用 HBuilderX 安心打包。已有安装需要沿用原签名。详见 [本地构建与签名](docs/build.md)。
 
+在 GitHub 上手动运行 **Android APK**，可由 GitHub Actions 使用 Gradle 构建和签名手机、TV 或双端 APK。打包完成后在工作流页面下载产物。配置步骤见 [GitHub Actions 在线构建](docs/github-actions.md)。
+
 ## 项目结构
 
 ```text
