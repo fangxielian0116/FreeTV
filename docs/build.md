@@ -22,7 +22,35 @@ npm run build:tv
 
 Linux 使用 [官方 HBuilderX Linux CLI 完整包](https://hx.dcloud.net.cn/Tutorial/install/linux-cli)，设置 `FREETV_HBUILDERX` 为解压目录下的 `HBuilderX`。GitHub Actions 自动安装工具链。
 
-## 签名与 APK
+## Gradle 离线打包
+
+手机和 TV 共用 `src/manifest.json` 中的包名与版本，分别生成触屏和遥控界面的 APK。npm 编译器生成前端资源和 UTS 的 Kotlin 源码，Gradle 从这些源码和本机 SDK 重新组装应用。首次准备 Gradle 依赖需要联网，出包过程不提交 DCloud 云打包任务。
+
+1. 准备 JDK 17 或更新版、Gradle 8.14.5、Android SDK Platform 36 和 Build Tools 36.0.0。
+2. 从 [DCloud Android 离线 SDK 历史版本](https://nativesupport.dcloud.net.cn/AppDocs/download/android.html) 获取 `Android-SDK_5.26.82680_20260914.zip`，解压后应包含 `SDK/libs` 和 `SDK/assets/data`。
+3. 为 `__UNI__E70B510` 和 `com.fxl.freetv.demo` 按原证书的 SHA-1 和 SHA-256 指纹配置 [Android 离线 AppKey](https://nativesupport.dcloud.net.cn/AppDocs/usesdk/appkey)。把值保存到 `.signing/dcloud-appkey.txt`，或通过 `FREETV_DCLOUD_APPKEY` 提供。继续使用下节的 `.signing/android-test.json` 签名配置。
+
+```powershell
+$env:JAVA_HOME = 'C:\Tools\jdk-17'
+$env:ANDROID_HOME = 'C:\Tools\AndroidSDK'
+$env:FREETV_GRADLE_HOME = 'C:\Tools\gradle-8.14.5'
+$env:FREETV_DCLOUD_ANDROID_SDK = 'C:\Tools\DCloud-Android-SDK-5.26'
+npm ci
+npm run pack:offline
+```
+
+默认工具目录为 `.tools/AndroidSDK`、`.tools/gradle-8.14.5` 和 `.tools/DCloud-Android-SDK-5.26`。`JAVA_HOME` 未设置时使用已安装 HBuilderX 的 JDK。可以用 `npm run pack:offline -- phone` 或 `npm run pack:offline -- tv` 单独打一个版本。通过签名、包名、版本和启动入口检查后，APK 与校验记录会写入 `artifacts/offline/phone/` 和 `artifacts/offline/tv/`。
+
+在已装有历史版本的手机和 TV 模拟器上覆盖安装新 APK，验证应用启动、原生播放和 TV 遥控入口。按[设备测试说明](device-setup.md)准备测试素材和模拟器后，运行对应验收脚本。
+
+```powershell
+.\scripts\check-phone-release.ps1 -ReceiptFile artifacts/offline/phone/offline-build-receipt.json
+.\scripts\check-tv-release.ps1 -ReceiptFile artifacts/offline/tv/offline-build-receipt.json
+```
+
+离线 SDK、AppKey、签名和打包产物保存在本机忽略目录。
+
+## 安心打包与签名
 
 打开 HBuilderX，登录有权使用 AppID `__UNI__E70B510` 的 DCloud 账号。使用官方 [CLI 安心打包](https://hx.dcloud.net.cn/cli/pack)，需要账号权限及可用打包配额。
 
@@ -44,7 +72,7 @@ npm run pack:android
 npm run pack:tv
 ```
 
-手机输出 `artifacts/phone/FreeTV-0.2.1-phone.apk`，TV 输出 `artifacts/tv/FreeTV-0.3.2-tv.apk`，同时记录源码、原生输入及 APK 哈希。需要看到最终文件和成功记录，单凭 CLI 返回码不能确认打包成功。
+手机输出 `artifacts/phone/FreeTV-0.3.4-phone.apk`，TV 输出 `artifacts/tv/FreeTV-0.3.4-tv.apk`，同时记录源码、原生输入及 APK 哈希。两端从 `src/manifest.json` 读取同一版本名和版本号。需要看到最终文件和成功记录，单凭 CLI 返回码不能确认打包成功。
 
 ## 源码上传范围
 

@@ -1,0 +1,31 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- FreeTV permissions -->
+    <application
+        android:name="io.dcloud.application.DCloudApplication"
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:hardwareAccelerated="true">
+        <meta-data android:name="dcloud_appkey" android:value="${dcloudAppKey}" />
+        <activity
+            android:name="io.dcloud.PandoraEntry"
+            android:configChanges="orientation|keyboardHidden|keyboard|navigation"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="${entryOrientation}"
+            android:theme="@style/FreeTVEntryTheme"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="io.dcloud.PandoraEntryActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|mcc|mnc|fontScale|keyboard|smallestScreenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="${entryOrientation}"
+            android:theme="@style/FreeTVHostTheme"
+            android:windowSoftInputMode="adjustResize" />
+    </application>
+</manifest>

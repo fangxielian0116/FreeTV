@@ -1,10 +1,12 @@
 import { existsSync, mkdirSync, cpSync, writeFileSync, readFileSync, rmSync, symlinkSync, readdirSync } from 'node:fs'
 import { resolve,join,sep } from 'node:path'
 import {compilePlayerLibrary} from './compile-player-library.mjs'
-export const TV_VERSION = '0.3.2', TV_VERSION_CODE = 302
-export function prepareAndroidStage(root, target = 'phone', preview = false) {
+const appVersion = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'))
+export const TV_VERSION = appVersion.versionName, TV_VERSION_CODE = Number(appVersion.versionCode)
+export function prepareAndroidStage(root, target = 'phone', preview = false, options = {}) {
   if (!['phone','tv'].includes(target)) throw new Error('Unknown Android target')
-  const stage = resolve(root,target==='tv'?(preview?'.cache/android-tv-preview-stage':'.cache/android-tv-stage'):(preview?'.cache/android-phone-preview-stage':'.cache/android-stage')), marker = join(stage,'.freetv-generated')
+  const defaultStage = target==='tv'?(preview?'.cache/android-tv-preview-stage':'.cache/android-tv-stage'):(preview?'.cache/android-phone-preview-stage':'.cache/android-stage')
+  const stage = resolve(root, options.stageDirectory ?? defaultStage), marker = join(stage,'.freetv-generated')
   if (!stage.startsWith(resolve(root)+sep)) throw new Error('Build staging path is outside the workspace.')
   mkdirSync(stage,{recursive:true})
   if (existsSync(marker) && readFileSync(marker,'utf8') !== resolve(root)) throw new Error('Unknown build staging ownership.')
@@ -18,13 +20,15 @@ export function prepareAndroidStage(root, target = 'phone', preview = false) {
   // HBuilderX's native pack validator resolves icons from the CLI project root,
   // whereas uni-app source assets are relative to src/manifest.json.
   const manifestPath = join(stagedSource,'manifest.json'), manifest = JSON.parse(readFileSync(manifestPath,'utf8'))
-  const nativeLibrary=compilePlayerLibrary(root)
-  const native=join(stagedSource,'uni_modules/freetv-player/utssdk/app-android')
-  const libs=join(native,'libs');mkdirSync(libs,{recursive:true})
-  cpSync(nativeLibrary.output,join(libs,'freetv-player.jar'))
-  // Both targets compile the same Kotlin source. Replace only the owned staging copy.
-  for(const file of readdirSync(native).filter(name=>name.endsWith('.kt')))rmSync(join(native,file))
-  writeFileSync(join(stage,'native-library-receipt.json'),JSON.stringify(nativeLibrary,null,2))
+  if (options.compileNative !== false) {
+    const nativeLibrary=compilePlayerLibrary(root)
+    const native=join(stagedSource,'uni_modules/freetv-player/utssdk/app-android')
+    const libs=join(native,'libs');mkdirSync(libs,{recursive:true})
+    cpSync(nativeLibrary.output,join(libs,'freetv-player.jar'))
+    // The cloud packager gets a precompiled JAR. Gradle builds Kotlin from source.
+    for(const file of readdirSync(native).filter(name=>name.endsWith('.kt')))rmSync(join(native,file))
+    writeFileSync(join(stage,'native-library-receipt.json'),JSON.stringify(nativeLibrary,null,2))
+  }
   if(target==='phone'){
     // uni-app resolves some @ imports before Vite aliases. Substitute only the
     // disposable phone staging files so every packer excludes TV dependencies.
@@ -33,7 +37,6 @@ export function prepareAndroidStage(root, target = 'phone', preview = false) {
     cpSync(join(root,'src/styles/tv-disabled.css'),join(stagedSource,'styles/tv.css'))
   }
   if (target==='tv') {
-    manifest.name='FreeTV TV';manifest.versionName=TV_VERSION;manifest.versionCode=String(TV_VERSION_CODE)
     manifest['app-plus'].screenOrientation=['landscape-primary','landscape-secondary']
     const pages=JSON.parse(readFileSync(join(stagedSource,'pages.json'),'utf8'))
     for(const page of pages.pages)page.style.navigationStyle='custom'

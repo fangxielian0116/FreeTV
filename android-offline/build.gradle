@@ -1,0 +1,87 @@
+import groovy.json.JsonSlurper
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    id 'com.android.application' version '8.12.0'
+    id 'org.jetbrains.kotlin.android' version '2.2.0'
+}
+
+def config = new JsonSlurper().parse(file('freetv-build.json'))
+
+android {
+    namespace = config.packageName
+    compileSdk = 36
+    buildToolsVersion = '36.0.0'
+
+    defaultConfig {
+        applicationId = config.packageName
+        minSdk = config.minSdk
+        // Keep the behavior of the current signed phone and TV APKs.
+        targetSdk = 28
+        versionCode = config.versionCode
+        versionName = config.versionName
+        multiDexEnabled = true
+        ndk { abiFilters.addAll(config.abis) }
+        resValue 'string', 'app_name', 'FreeTV'
+        manifestPlaceholders = [dcloudAppKey: System.getenv('FREETV_OFFLINE_APPKEY') ?: '']
+    }
+
+    flavorDimensions += 'device'
+    productFlavors {
+        phone {
+            dimension = 'device'
+            manifestPlaceholders = [entryOrientation: 'user']
+        }
+        tv {
+            dimension = 'device'
+            manifestPlaceholders = [entryOrientation: 'landscape']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    androidResources {
+        additionalParameters += ['--auto-add-overlay']
+        ignoreAssetsPattern = '!.svn:!.git:.*:!CVS:!thumbs.db:!picasa.ini:!*.scc:*~'
+    }
+    buildTypes {
+        // The runtime resolves the generated UTS module by class name.
+        release { minifyEnabled = false }
+    }
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+    }
+}
+
+kotlin {
+    compilerOptions { jvmTarget = JvmTarget.JVM_17 }
+}
+
+dependencies {
+    implementation files(config.runtimeLibraries)
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+    implementation 'androidx.core:core-ktx:1.6.0'
+    implementation 'androidx.fragment:fragment:1.1.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'androidx.webkit:webkit:1.5.0'
+    implementation 'com.facebook.fresco:fresco:3.4.0'
+    implementation 'com.facebook.fresco:middleware:3.4.0'
+    implementation 'com.facebook.fresco:animated-gif:3.4.0'
+    implementation 'com.facebook.fresco:webpsupport:3.4.0'
+    implementation 'com.facebook.fresco:animated-webp:3.4.0'
+    implementation 'com.github.bumptech.glide:glide:4.9.0'
+    implementation 'com.alibaba:fastjson:1.2.83'
+    implementation 'net.lingala.zip4j:zip4j:2.11.5'
+    implementation 'com.squareup.okhttp3:okhttp:3.12.12'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:2.2.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    implementation 'com.github.getActivity:XXPermissions:18.63'
+
+    implementation 'io.github.carguo:gsyvideoplayer-java:14.0.0'
+    implementation('io.github.carguo:gsyvideoplayer-exo2:14.0.0') {
+        exclude group: 'androidx.media3', module: 'media3-cast'
+    }
+}

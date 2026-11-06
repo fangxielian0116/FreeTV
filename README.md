@@ -29,8 +29,8 @@ FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin �
 
 | 目标 | 源码版本 | 说明 |
 | --- | --- | --- |
-| Android 手机 | 0.2.1 / 201 | 触屏界面、原生播放器 |
-| Android TV | 0.3.2 / 302 | 横屏界面、遥控器交互 |
+| Android 手机 | 0.3.4 / 304 | 触屏界面、原生播放器 |
+| Android TV | 0.3.4 / 304 | 横屏界面、遥控器交互 |
 | H5 | 开发预览 | 页面调试，不能替代 Android 原生播放验收 |
 
 最低支持 Android 6.0。手机与 TV 当前共用包名 `com.fxl.freetv.demo`，在同一设备上安装时会覆盖已有版本。已有手机 APK 原生播放与 TV 模拟器验收记录；海信真机尚未验证。本机历史资料位于 `artifacts/`，不随源码提交。
@@ -72,20 +72,23 @@ npm run check
 | `npm run check` | 类型检查、测试、手机 H5 与 Android 资源构建 |
 | `npm run build:tv:h5` | TV H5 资源 → `dist/build/tv-h5/` |
 | `npm run build:tv` | TV Android 资源 → `dist/build/tv-app/` |
-| `npm run pack:android` | 手机 APK → `artifacts/phone/FreeTV-0.2.1-phone.apk` |
-| `npm run pack:tv` | TV APK → `artifacts/tv/FreeTV-0.3.2-tv.apk` |
+| `npm run pack:offline` | 用 Gradle 离线生成手机和 TV 的签名 APK → `artifacts/offline/` |
+| `npm run pack:android` | 手机 APK → `artifacts/phone/FreeTV-0.3.4-phone.apk` |
+| `npm run pack:tv` | TV APK → `artifacts/tv/FreeTV-0.3.4-tv.apk` |
 
-`build:android` 和 `build:tv` 仅生成应用资源；独立 APK 必须运行 `pack`。本地打包前启动 HBuilderX 并登录有权使用当前 AppID 的 DCloud 账号，将签名配置保存在 `.signing/android-test.json`。已有安装需要沿用原签名；全新项目可运行 `node scripts/prepare-android-signing.mjs` 创建本地测试签名。详见 [本地构建与签名](docs/build.md)。
+`build:android` 和 `build:tv` 生成应用资源。Gradle 离线打包使用匹配版本的 DCloud Android 离线 SDK、离线 AppKey 和本地签名。`pack:android` 和 `pack:tv` 使用 HBuilderX 安心打包。已有安装需要沿用原签名。详见 [本地构建与签名](docs/build.md)。
 
 ## 项目结构
 
 ```text
 src/components/                  手机与 TV 界面组件
+src/data/                        内置片名联想词库
 src/domain/                      分类、匹配、剧集导航与恢复规则
 src/services/                    目录、配置、收藏、历史和进度
 src/pages/                       首页、搜索、详情、设置和播放页
 src/platform/                    平台适配和播放器桥接
 src/uni_modules/freetv-player/    UTS / Kotlin 原生播放器
+android-offline/                 Android 离线打包 Gradle 工程模板
 scripts/                         构建、打包与验证工具
 tests/                           业务逻辑和 Android 测试
 docs/                            构建、交互和实现说明
@@ -97,6 +100,7 @@ docs/                            构建、交互和实现说明
 ## 开发文档
 
 - [本地构建与签名](docs/build.md)
+- [GitHub Actions 在线构建](docs/github-actions.md)
 - [Android 构建与设备测试](docs/device-setup.md)
 - [TV 开发、遥控器和验收](docs/tv-guide.md)
 - [手机与 TV 的共享功能](docs/shared-mobile-tv.md)

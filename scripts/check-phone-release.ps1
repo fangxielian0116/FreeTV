@@ -1,13 +1,15 @@
-param([string]$Serial='emulator-5554',[switch]$Resume)
+param([string]$Serial='emulator-5554',[switch]$Resume,[string]$ReceiptFile)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
-$out=Join-Path $root 'artifacts/phone'
+if(-not $ReceiptFile){$ReceiptFile=Join-Path $root 'artifacts/phone/phone-build-receipt.json'}
+$ReceiptFile=(Resolve-Path -LiteralPath $ReceiptFile).ProviderPath
+$out=Split-Path -Parent $ReceiptFile
 $adb=Join-Path $root '.tools/AndroidSDK/platform-tools/adb.exe'
 $deviceArgs=@('-P','5038','-s',$Serial)
 $avd=& $adb @deviceArgs emu avd name
 if($Serial -notmatch '^emulator-' -or $avd -notcontains 'FreeTV_Android'){throw 'Phone checks must run only on the owned FreeTV_Android AVD.'}
-$receipt=Get-Content (Join-Path $out 'phone-build-receipt.json') -Raw | ConvertFrom-Json
+$receipt=Get-Content -LiteralPath $ReceiptFile -Raw | ConvertFrom-Json
 $digest=(Get-FileHash -LiteralPath $receipt.apk -Algorithm SHA256).Hash.ToLowerInvariant()
 if($digest -ne $receipt.sha256){throw 'Phone APK checksum differs'}
 & $adb @deviceArgs install -r $receipt.apk

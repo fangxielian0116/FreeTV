@@ -29,7 +29,7 @@ public class TVChecks extends Instrumentation {
     private JSONObject dom()throws Exception{
         Activity activity=visible.get();if(activity==null)return new JSONObject();
         JSONObject diagnostic=new JSONObject();ArrayList<WebView> webviews=new ArrayList<>();runOnMainSync(()->views(activity.getWindow().getDecorView(),webviews));
-        String script="(function(){var root=document.querySelector('.tv-screen');if(!root)return JSON.stringify({total:0,url:location.href,body:document.body?document.body.innerHTML.slice(0,2000):'no body'});var a=document.activeElement;var controls=Array.from(root.querySelectorAll('[data-tv-focus]')).filter(function(e){return e.getClientRects().length&&!e.disabled}).map(function(e){var r=e.getBoundingClientRect();return {id:e.getAttribute('data-tv-id')||'',focus:e.getAttribute('data-tv-focus'),text:(e.textContent||'').trim(),x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height}});return JSON.stringify({total:controls.length,focus:root.contains(a)?a.getAttribute('data-tv-focus'):'',focusId:a&&a.getAttribute('data-tv-id'),text:root.textContent,query:root.querySelector('.tv-query')?root.querySelector('.tv-query').firstElementChild.textContent:'',controls:controls,width:innerWidth,height:innerHeight,columns:root.querySelector('.drama-grid')?getComputedStyle(root.querySelector('.drama-grid')).gridTemplateColumns:'',outline:a?getComputedStyle(a).outlineWidth:'',unit:getComputedStyle(root).getPropertyValue('--tv-unit')})})()";
+        String script="(function(){var root=document.querySelector('.tv-screen');if(!root)return JSON.stringify({total:0,url:location.href,body:document.body?document.body.innerHTML.slice(0,2000):'no body'});var a=document.activeElement;var controls=Array.from(root.querySelectorAll('[data-tv-focus]')).filter(function(e){return e.getClientRects().length&&!e.disabled}).map(function(e){var r=e.getBoundingClientRect();return {id:e.getAttribute('data-tv-id')||'',focus:e.getAttribute('data-tv-focus'),text:(e.textContent||'').trim(),x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height}});return JSON.stringify({total:controls.length,focus:root.contains(a)?a.getAttribute('data-tv-focus'):'',focusId:a&&a.getAttribute('data-tv-id'),text:root.textContent,query:root.querySelector('.tv-query input')?.value||'',queryFields:root.querySelectorAll('.tv-query input').length,queryFocused:a===root.querySelector('.tv-query input'),controls:controls,width:innerWidth,height:innerHeight,columns:root.querySelector('.drama-grid')?getComputedStyle(root.querySelector('.drama-grid')).gridTemplateColumns:'',outline:a?getComputedStyle(a).outlineWidth:'',unit:getComputedStyle(root).getPropertyValue('--tv-unit')})})()";
         for(int i=webviews.size()-1;i>=0;i--){WebView web=webviews.get(i);LinkedBlockingQueue<String> q=new LinkedBlockingQueue<>();runOnMainSync(()->web.evaluateJavascript(script,q::offer));String raw=q.poll(3,TimeUnit.SECONDS);if(raw!=null){Object decoded=new org.json.JSONTokener(raw).nextValue();if(decoded instanceof String){JSONObject d=new JSONObject((String)decoded);if(d.optInt("total")>0)return d;diagnostic=d;}}}
         return diagnostic;
     }
@@ -62,6 +62,47 @@ public class TVChecks extends Instrumentation {
     }
     private void heldOK()throws Exception{long start=android.os.SystemClock.uptimeMillis();for(int repeat=0;repeat<5;repeat++){getUiAutomation().injectInputEvent(new KeyEvent(start,android.os.SystemClock.uptimeMillis(),KeyEvent.ACTION_DOWN,KeyEvent.KEYCODE_DPAD_CENTER,repeat,0,KeyEvent.KEYCODE_UNKNOWN,0,0,android.view.InputDevice.SOURCE_DPAD),true);Thread.sleep(120);}getUiAutomation().injectInputEvent(new KeyEvent(start,android.os.SystemClock.uptimeMillis(),KeyEvent.ACTION_UP,KeyEvent.KEYCODE_DPAD_CENTER,0,0,KeyEvent.KEYCODE_UNKNOWN,0,0,android.view.InputDevice.SOURCE_DPAD),true);Thread.sleep(250);}
     private String titleSyncTime(String text){java.util.regex.Matcher m=java.util.regex.Pattern.compile("最近更新：(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").matcher(text);return m.find()?m.group(1):"";}
+    private boolean keyboardVisible(){
+        if(android.os.Build.VERSION.SDK_INT<30)return true;
+        AtomicReference<Boolean> shown=new AtomicReference<>(false);
+        runOnMainSync(()->{
+            Activity activity=visible.get();
+            if(activity==null)return;
+            android.view.WindowInsets insets=activity.getWindow().getDecorView().getRootWindowInsets();
+            shown.set(insets!=null&&insets.isVisible(android.view.WindowInsets.Type.ime()));
+        });
+        return shown.get();
+    }
+    private JSONObject waitForQueryFocus(boolean expected)throws Exception{
+        long deadline=System.currentTimeMillis()+8000;
+        JSONObject state=new JSONObject();
+        while(System.currentTimeMillis()<deadline){
+            state=dom();
+            if(state.optInt("queryFields")==1&&state.optBoolean("queryFocused")==expected&&(!expected||keyboardVisible()))return state;
+            Thread.sleep(150);
+        }
+        throw new AssertionError("Query focus or keyboard visibility did not change to "+expected+": "+state);
+    }
+    private void sharedSearchInput(JSONObject home)throws Exception{
+        JSONObject entry=control(home,"search-entry",false),discover=control(home,"发现",true);
+        check(entry!=null&&discover!=null,"Missing homepage search or navigation");
+        check(entry.getDouble("x")+entry.getDouble("w")/2+4<discover.getDouble("x")-discover.getDouble("w")/2,"Search overlaps navigation");
+        check(entry.getDouble("w")<=390*Double.parseDouble(home.getString("unit").trim().replace("px",""))+1,"Focused search is too wide");
+        select("search-entry",false);waitText("例如 kb",10000);
+        for(String letter:new String[]{"L","J","X"})select("key-"+letter,false);
+        JSONObject local=waitText("临江仙",8000);
+        check(local.optInt("queryFields")==1&&local.optString("query").equals("ljx"),"Initials did not reach the shared field");
+        move("system-input",false);heldOK();
+        check(waitForQueryFocus(true).optString("query").equals("ljx"),"Chinese input lost the existing query");
+        screenshot("shared-query-ime");key(KeyEvent.KEYCODE_BACK);waitForQueryFocus(false);
+        select("system-input",false);
+        check(waitForQueryFocus(true).optString("query").equals("ljx"),"Keyboard did not reopen with the previous query");
+        sendStringSync("7");Thread.sleep(350);
+        String edited=dom().optString("query");
+        check(edited.length()==4&&edited.replace("7","").equals("ljx"),"System typing did not update the shared query: "+edited);
+        key(KeyEvent.KEYCODE_BACK);waitForQueryFocus(false);
+        note("TV_SHARED_QUERY LJX resolves 临江仙, one field and two IME opens passed");
+    }
     private void syncPolicy()throws Exception{
         select("设置",true);waitText("热门片名",30000);
         long until=System.currentTimeMillis()+150000;JSONObject state=dom();
@@ -105,6 +146,7 @@ public class TVChecks extends Instrumentation {
             JSONObject home=waitText("近期新作",30000);note("TV_HOME "+home);screenshot("home");
             check(!home.optString("focus").isEmpty(),"Initial TV focus missing");
             if("syncPolicy".equals(arguments.getString("mode"))){syncPolicy();}
+            else if("searchInput".equals(arguments.getString("mode"))){sharedSearchInput(home);}
             else if(!"inspect".equals(arguments.getString("mode"))){
                 String before=home.optString("focus");key(22);check(!dom().optString("focus").equals(before),"Physical DPAD_RIGHT did not move focus");
                 check(control(home,"搜索",true)==null,"Duplicate search navigation remains");

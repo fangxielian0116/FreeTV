@@ -1,7 +1,7 @@
 <template><view class="screen" :class="{'tv-search-page':TV_BUILD}">
-  <TVNavigation v-if="TV_BUILD" :active="tvActive" :focus-request="focusRequest"/>
+  <TVNavigation v-if="TV_BUILD" :active="tvActive" :focus-request="focusRequest" :query-blur-request="queryBlurRequest"/>
   <view v-if="TV_BUILD" class="tv-back-row"><button class="quiet" @click="back">‹ 返回</button><text class="section-title">{{resultsMode?'搜索结果':'搜索影视'}}</text><button v-if="resultsMode" class="secondary" data-tv-id="edit-search" @click="editSearch">修改搜索</button></view>
-  <TVSearch v-if="TV_BUILD&&!resultsMode" v-model="input" @search="search"/>
+  <TVSearch v-if="TV_BUILD&&!resultsMode" ref="tvSearch" v-model="input" @search="search" @blur-query="queryBlurRequest++"/>
   <SearchBar v-else-if="!TV_BUILD" v-model="input" placeholder="搜索想看的影视" @search="search"/>
   <template v-if="!TV_BUILD||resultsMode">
     <view v-if="TV_BUILD" class="tv-results-heading"><text class="title">“{{keyword}}”</text><text class="hint">{{busy?'正在查找相关影视…':error?'本次搜索未完成':items.length?'已找到 '+items.length+' 部'+(next?' · 下方可加载更多':''):'试试别名或更短的关键词'}}</text></view>
@@ -21,12 +21,15 @@ import {rememberTitleSearch} from '@/services/title-index'
 import SearchBar from '@/components/SearchBar.vue'
 import {readSearchQuery} from '@/domain/search-query'
 import {AbortController} from '@/platform/cancellation'
-import {ref,computed,nextTick} from 'vue';import {onLoad,onShow,onHide,onUnload} from '@dcloudio/uni-app';import DramaCard from '@/components/DramaCard.vue';import {itemKey,type CatalogItem} from '@/domain/catalog';import {searchCatalog} from '@/services/catalog';import {sourceState} from '@/services/source-store'
+import {ref,computed,nextTick} from 'vue';import {onBackPress,onLoad,onShow,onHide,onUnload} from '@dcloudio/uni-app';import DramaCard from '@/components/DramaCard.vue';import {itemKey,type CatalogItem} from '@/domain/catalog';import {searchCatalog} from '@/services/catalog';import {sourceState} from '@/services/source-store'
 const input=ref(''),items=ref<CatalogItem[]>([]),busy=ref(false),error=ref(''),next=ref<number|null>(null);let keyword='',generation=0,controller:AbortController|undefined
 const searched=ref(false),resultsMode=ref(false),focusRequest=ref<{id:string;token:number}>()
 const settled=ref(false),showNoResults=computed(()=>searched.value&&settled.value&&!busy.value&&!error.value&&!items.value.length)
 let focusToken=0
 let displayedSource=''
+const tvSearch=ref<{handleBack?:()=>boolean}>()
+const queryBlurRequest=ref(0)
+if(TV_BUILD)onBackPress(()=>tvSearch.value?.handleBack?.()===true)
 onHide(()=>{generation++;controller?.abort();busy.value=false})
 onShow(()=>{if(displayedSource&&displayedSource!==sourceState.currentId){items.value=[];next.value=null;void load()}})
 onLoad(query=>{input.value=readSearchQuery(query);if(input.value.trim())search()});onUnload(()=>{generation++;controller?.abort()})

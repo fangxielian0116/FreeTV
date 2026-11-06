@@ -1,6 +1,6 @@
 {
   "name": "freetv-demo",
-  "version": "0.2.1",
+  "version": "0.3.4",
   "private": true,
   "engines": { "node": ">=22.12.0" },
   "scripts": {
@@ -8,6 +8,7 @@
     "build:h5": "node scripts/build-phone.mjs --h5",
     "build:android": "node scripts/build-phone.mjs",
     "pack:android": "node scripts/pack-android.mjs --staged",
+    "pack:offline": "node scripts/pack-android-offline.mjs",
     "typecheck": "vue-tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build:h5 && npm run build:android",

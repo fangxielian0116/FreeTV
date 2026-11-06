@@ -393,6 +393,9 @@ public class PlayerChecks extends Instrumentation {
                 long seekUntil=System.currentTimeMillis()+3000;while(System.currentTimeMillis()<seekUntil){next(seekUntil);if(latest.optDouble("position")>beforeSeek+7)break;}
                 check(latest.optDouble("position")>beforeSeek+7,"Remote right did not seek: "+latest);
                 sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_UP);Thread.sleep(150);check(bar.getVisibility()==android.view.View.VISIBLE&&speed.hasFocus(),"Up did not open the panel with speed focused");
+                sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK);Thread.sleep(150);check(bar.getVisibility()==android.view.View.GONE,"Back did not hide the panel before Menu check");
+                sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_MENU);Thread.sleep(150);check(bar.getVisibility()==android.view.View.VISIBLE&&speed.hasFocus(),"Menu did not open the panel with speed focused");
+                note("TV_MENU Control panel opened with KEYCODE_MENU");
                 long heldAt=android.os.SystemClock.uptimeMillis();
                 for(int repeat=0;repeat<4;repeat++)getUiAutomation().injectInputEvent(new android.view.KeyEvent(heldAt,android.os.SystemClock.uptimeMillis(),android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_DPAD_CENTER,repeat,0,android.view.KeyEvent.KEYCODE_UNKNOWN,0,0,android.view.InputDevice.SOURCE_DPAD),true);
                 check(speed.getText().toString().equals("倍速 1.25×"),"Speed did not update on key-down, or held OK activated repeatedly: "+speed.getText());

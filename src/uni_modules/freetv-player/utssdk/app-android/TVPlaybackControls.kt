@@ -130,6 +130,10 @@ internal class TVPlaybackControls(
     fun key(event: KeyEvent): Boolean {
         val code = event.keyCode
         val down = event.action == KeyEvent.ACTION_DOWN
+        if (code == KeyEvent.KEYCODE_MENU) {
+            if (down && event.repeatCount == 0) show()
+            return true
+        }
         val select = code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER
         if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || code == KeyEvent.KEYCODE_MEDIA_PLAY || code == KeyEvent.KEYCODE_MEDIA_PAUSE) {
             if (down && event.repeatCount == 0) { val state = snapshot()?.state; if (code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || code == KeyEvent.KEYCODE_MEDIA_PLAY && state == "paused" || code == KeyEvent.KEYCODE_MEDIA_PAUSE && state != "paused") togglePlayback() }

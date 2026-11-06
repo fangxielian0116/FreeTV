@@ -1,0 +1,4 @@
+<resources>
+    <style name="FreeTVEntryTheme" parent="@android:style/Theme.Translucent.NoTitleBar" />
+    <style name="FreeTVHostTheme" parent="Theme.AppCompat.Light.NoActionBar" />
+</resources>

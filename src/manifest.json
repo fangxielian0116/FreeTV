@@ -2,8 +2,8 @@
     "name" : "FreeTV",
     "appid" : "__UNI__E70B510",
     "description" : "影视目录与 Android 原生播放器",
-    "versionName" : "0.2.1",
-    "versionCode" : "201",
+    "versionName" : "0.3.4",
+    "versionCode" : "304",
     "transformPx" : false,
     "vueVersion" : "3",
     "app-plus" : {

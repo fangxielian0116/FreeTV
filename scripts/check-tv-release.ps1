@@ -1,11 +1,13 @@
-param([switch]$NativeOnly,[switch]$Resume)
+param([switch]$NativeOnly,[switch]$Resume,[string]$ReceiptFile)
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
-$out=Join-Path $root 'artifacts\tv'
+if(-not $ReceiptFile){$ReceiptFile=Join-Path $root 'artifacts/tv/tv-build-receipt.json'}
+$ReceiptFile=(Resolve-Path -LiteralPath $ReceiptFile).ProviderPath
+$out=Split-Path -Parent $ReceiptFile
 $adb=Join-Path $root '.tools\AndroidSDK\platform-tools\adb.exe'
 $deviceArgs=@('-P','5038','-s','emulator-5556')
-$receipt=Get-Content -LiteralPath (Join-Path $out 'tv-build-receipt.json') -Raw | ConvertFrom-Json
+$receipt=Get-Content -LiteralPath $ReceiptFile -Raw | ConvertFrom-Json
 $digest=(Get-FileHash -LiteralPath $receipt.apk -Algorithm SHA256).Hash.ToLowerInvariant()
 if($digest -ne $receipt.sha256){throw 'APK differs from final receipt'}
 & $adb @deviceArgs install -r $receipt.apk
