@@ -17,7 +17,7 @@ FreeTV 使用 uni-app、Vue 3 和 TypeScript 构建界面，通过 UTS/Kotlin �
 
 ## 下载安装
 
-在 GitHub Releases 下载已签名的 APK。仓库为私有仓库，下载需要登录有访问权限的 GitHub 账号。[下载最新版](https://github.com/fangxielian0116/FreeTV/releases/latest)
+在 GitHub Releases 下载已签名的 APK。[下载最新版](https://github.com/fangxielian0116/FreeTV/releases/latest)
 
 - **Android 手机**用 `FreeTV-<版本>-phone.apk`，支持触屏操作。
 - **Android TV** 用 `FreeTV-<版本>-tv.apk`，支持遥控器和电视桌面入口。

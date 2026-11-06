@@ -37,7 +37,7 @@ Windows 可复制证书的 Base64 到剪贴板，再粘贴进 Secret 输入框�
 
 签名文件不进入 artifact 或缓存；结束时清理临时签名配置。APK 工作流仅手动触发，不在 PR 上读取 Secrets，同一仓库的 APK 打包串行进行。
 
-工作流从私有仓库的 `build-deps/dcloud-sdk` 依赖分支检出固定提交，校验 DCloud 离线 SDK 压缩包的 SHA-256 后解压到 `.tools/`。更新 SDK 时需同步更新依赖分支、工作流引用的提交与校验值，以及打包脚本中的 SDK 版本。SDK 获取与 AppKey 配置见 [本地构建与签名](build.md)。
+工作流从 `build-deps/dcloud-sdk` 依赖分支检出固定提交，校验 DCloud 离线 SDK 压缩包的 SHA-256 后解压到 `.tools/`。更新 SDK 时需同步更新依赖分支、工作流引用的提交与校验值，以及打包脚本中的 SDK 版本。SDK 获取与 AppKey 配置见 [本地构建与签名](build.md)。
 
 ## 排查
 
