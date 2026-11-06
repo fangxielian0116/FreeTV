@@ -54,15 +54,18 @@ jobs:
           curl --fail --location --retry 3 https://services.gradle.org/distributions/gradle-8.14.5-bin.zip --output "$RUNNER_TEMP/gradle-8.14.5-bin.zip"
           echo "6f74b601422d6d6fc4e1f9a1ab6522f642c2fdcbc15ae33ebd30ba3d7198e854  $RUNNER_TEMP/gradle-8.14.5-bin.zip" | sha256sum --check
           unzip -q "$RUNNER_TEMP/gradle-8.14.5-bin.zip" -d .tools
-      - name: Download pinned DCloud offline SDK
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Check out pinned DCloud offline SDK
+        uses: actions/checkout@v4
+        with:
+          ref: b98e382f07ee488c12b0b47fdd99ad83c9f8d953
+          path: .tools/sdk-archive
+          persist-credentials: false
+      - name: Verify and extract DCloud offline SDK
         run: |
-          sdk_archive=dcloud-android-sdk-5.26.82680_20260914-ci.tar.gz
-          gh release download build-sdk-5.26.82680-20260914 --repo "$GITHUB_REPOSITORY" --pattern "$sdk_archive" --dir "$RUNNER_TEMP"
-          echo "5caa0747dd32b9debe3eb3af37715f81391f15a8f052a3951ef521d6ec9553e0  $RUNNER_TEMP/$sdk_archive" | sha256sum --check
+          sdk_archive=.tools/sdk-archive/dcloud-android-sdk-5.26.82680_20260914-ci.tar.gz
+          echo "5caa0747dd32b9debe3eb3af37715f81391f15a8f052a3951ef521d6ec9553e0  $sdk_archive" | sha256sum --check
           mkdir -p .tools/DCloud-Android-SDK-5.26
-          tar -xzf "$RUNNER_TEMP/$sdk_archive" -C .tools/DCloud-Android-SDK-5.26
+          tar -xzf "$sdk_archive" -C .tools/DCloud-Android-SDK-5.26
       - name: Build signed APK
         run: node scripts/ci/pack.mjs
         env:

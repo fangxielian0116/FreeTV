@@ -37,7 +37,7 @@ Windows 可复制证书的 Base64 到剪贴板，再粘贴进 Secret 输入框�
 
 签名文件不进入 artifact 或缓存；结束时清理临时签名配置。APK 工作流仅手动触发，不在 PR 上读取 Secrets，同一仓库的 APK 打包串行进行。
 
-工作流从私有仓库的 `build-sdk-5.26.82680-20260914` 预发布附件下载固定版本的 DCloud 离线 SDK 运行库，并校验 SHA-256。更新 SDK 时需同步更换依赖附件、校验值及打包脚本中的 SDK 版本。SDK 获取与 AppKey 配置见 [本地构建与签名](build.md)。
+工作流从私有仓库的 `build-deps/dcloud-sdk` 依赖分支检出固定提交，校验 DCloud 离线 SDK 压缩包的 SHA-256 后解压到 `.tools/`。更新 SDK 时需同步更新依赖分支、工作流引用的提交与校验值，以及打包脚本中的 SDK 版本。SDK 获取与 AppKey 配置见 [本地构建与签名](build.md)。
 
 ## 排查
 
@@ -45,7 +45,8 @@ Windows 可复制证书的 Base64 到剪贴板，再粘贴进 Secret 输入框�
 | --- | --- |
 | Validate required secrets | 五个 Secret 是否齐全、命名是否正确 |
 | Install Android and Gradle build tools | Gradle 下载源是否可达，Android SDK 组件是否可安装 |
-| Download pinned DCloud offline SDK | SDK 附件和 SHA-256 是否与工作流匹配 |
+| Check out pinned DCloud offline SDK | SDK 依赖提交是否可访问 |
+| Verify and extract DCloud offline SDK | 压缩包和 SHA-256 是否与工作流匹配 |
 | Build signed APK | 编译日志、证书别名与密码、APK 签名和应用标识 |
 | Artifact 上传 | 前一步是否真正生成 APK |
 

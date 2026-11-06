@@ -61,7 +61,7 @@ npm run dev:h5
 
 ### GitHub Actions 构建签名 APK
 
-在仓库打开 **Actions → Android APK → Run workflow**，选择 `main` 和目标 `both`、`phone` 或 `tv`。成功后在该次运行的 **Artifacts** 下载签名 APK。首次配置需要离线 AppKey、Android 签名 Secrets 和固定版本的 SDK 附件。[GitHub Actions 配置说明](docs/github-actions.md)
+在仓库打开 **Actions → Android APK → Run workflow**，选择 `main` 和目标 `both`、`phone` 或 `tv`。成功后在该次运行的 **Artifacts** 下载签名 APK。首次配置需要离线 AppKey、Android 签名 Secrets 和固定版本的 SDK 构建依赖。[GitHub Actions 配置说明](docs/github-actions.md)
 
 ### 本地构建签名 APK
 
